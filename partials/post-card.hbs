@@ -37,16 +37,26 @@ which templates loop over to generate a list of posts. --}}
 
     <div class="post-card-content">
 
-        <a class="post-card-content-link" href="{{url}}">
-            <header class="post-card-header">
-                <div class="post-card-tags">
-                    {{#primary_tag}}
-                        <span class="post-card-primary-tag">{{name}}</span>
-                    {{/primary_tag}}
-                    {{#if featured}}
-                        <span class="post-card-featured">{{> "icons/fire"}} Featured</span>
-                    {{/if}}
-                </div>
+        <header class="post-card-header">
+            <div class="post-card-tags">
+                {{!-- {{#primary_tag}}
+                    <span class="post-card-primary-tag">{{name}}</span>
+                {{/primary_tag}} --}}
+                {{#if tags}} 
+                    {{#foreach tags limit="3" }}
+                        <span class="post-card-primary-tag">
+                            <a href="{{url}}">{{name}}</a>
+                        </span>
+                        {{#unless @last}}
+                            <span class="tag-separator"> | </span>
+                        {{/unless}}
+                    {{/foreach}}
+                {{/if}}
+                {{#if featured}}
+                    <span class="post-card-featured">{{> "icons/fire"}} Featured</span>
+                {{/if}}
+            </div>
+            <a class="post-card-content-link" href="{{url}}">
                 <h2 class="post-card-title">
                     {{#unless access}}
                     {{^has visibility="public"}}
@@ -57,11 +67,13 @@ which templates loop over to generate a list of posts. --}}
                     {{/unless}}
                     {{title}}
                 </h2>
-            </header>
-            {{#if excerpt}}
+            </a>
+        </header>
+        {{#if excerpt}}
+            <a class="post-card-content-link" href="{{url}}">
                 <div class="post-card-excerpt">{{excerpt}}</div>
-            {{/if}}
-        </a>
+            </a>
+        {{/if}}
 
         <footer class="post-card-meta">
             <time class="post-card-meta-date" datetime="{{date format="YYYY-MM-DD"}}">{{date}}</time>
