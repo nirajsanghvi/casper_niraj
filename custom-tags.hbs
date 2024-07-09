@@ -1,0 +1,50 @@
+{{!< default}}
+
+{{#post}}
+
+<main id="site-main" class="site-main outer">
+<div class="inner posts">
+    <div class="post-feed">
+        <section class="post-card post-card-large">
+            <div class="post-card-content">
+              <div class="post-card-content-link">
+                  <header class="post-card-header">
+                      <h2 class="post-card-title">{{title}}</h2>
+                  </header>
+              </div>
+            </div>
+        </section>
+
+        {{#get 'tags' limit='all' include='count.posts' order='name asc'}}
+        {{#foreach tags}}
+            <a href='{{ url }}'>
+            <h2 class="post-card-title">{{ name }} <small>({{ count.posts }})</small></h2>
+            </a>
+            <br/>
+        {{/foreach}}
+        {{/get}}
+    </div>
+</div>
+</main>
+
+{{!-- <main id="site-main" class="site-main outer" role="main">
+  <div class="inner posts">
+    <div class="post-feed">
+      <header class="post-card-header">
+        <h1 class="post-card-large">{{title}}</h1>
+      </header>
+      <div class="post-card-content">
+        {{#get 'tags' limit='all' include='count.posts' order='name asc'}}
+        {{#foreach tags}}
+            <a href='{{ url }}'>
+            <h2 class="post-card-title">{{ name }} <small>({{ count.posts }})</small></h2>
+            </a>
+            <br/>
+        {{/foreach}}
+        {{/get}}
+      </div>
+    </div>
+  </div>
+</main> --}}
+
+{{/post}}
