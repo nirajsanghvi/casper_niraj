@@ -24,9 +24,9 @@ which templates loop over to generate a list of posts. --}}
             <div class="post-card-access">
                 {{> "icons/lock"}}
                 {{#has visibility="members"}}
-                    Members only
+                    {{t "Members only"}}
                 {{else}}
-                    Paid-members only
+                    {{t "Paid-members only"}}
                 {{/has}}
             </div>
         {{/has}}
@@ -53,7 +53,7 @@ which templates loop over to generate a list of posts. --}}
                     {{/foreach}}
                 {{/if}}
                 {{#if featured}}
-                    <span class="post-card-featured">{{> "icons/fire"}} Featured</span>
+                    <span class="post-card-featured">{{> "icons/fire"}} {{t "Featured"}}</span>
                 {{/if}}
             </div>
             <a class="post-card-content-link" href="{{url}}">
@@ -76,9 +76,9 @@ which templates loop over to generate a list of posts. --}}
         {{/if}}
 
         <footer class="post-card-meta">
-            <time class="post-card-meta-date" datetime="{{date format="YYYY-MM-DD"}}">{{date}}</time>
+            <time class="post-card-meta-date" datetime="{{date format="YYYY-MM-DD"}}">{{date format="DD MMM YYYY"}}</time>
             {{#if reading_time}}
-                <span class="post-card-meta-length">{{reading_time}}</span>
+                <span class="post-card-meta-length">{{reading_time minute=(t "1 min read") minutes=(t "% min read")}}</span>
             {{/if}}
             {{#if @site.comments_enabled}}
                 {{comment_count}}

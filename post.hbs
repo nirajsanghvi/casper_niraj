@@ -33,7 +33,7 @@ into the {body} tag of the default.hbs template --}}
             {{/if}}
 
             {{#if featured}}
-                <span class="post-card-featured">{{> "icons/fire"}} Featured</span>
+                <span class="post-card-featured">{{> "icons/fire"}} {{t "Featured"}}</span>
             {{/if}}
         </div>
 
@@ -63,14 +63,14 @@ into the {body} tag of the default.hbs template --}}
             <div class="article-byline-meta">
                 <h4 class="author-name">{{authors}}</h4>
                 <div class="byline-meta-content">
-                    <time class="byline-meta-date" datetime="{{date published_at format="YYYY-MM-DD"}}">{{date published_at format="ll"}}</time>
+                    <time class="byline-meta-date" datetime="{{date published_at format="YYYY-MM-DD"}}">{{date published_at format="DD MMM YYYY"}}</time>
                     {{#if reading_time}}
-                        <span class="byline-reading-time"><span class="bull">&bull;</span> {{reading_time}}</span>
+                        <span class="byline-reading-time"><span class="bull">&bull;</span> {{reading_time minute=(t "1 min read") minutes=(t "% min read")}}</span>
                     {{/if}}
                     {{#match (date published_at format="l") "!=" (date updated_at format="l")}}
                         <br/>
                         <span class="byline-updated-date">
-                            Updated: <time class="byline-meta-date" datetime="{{date updated_at format="YYYY-MM-DD"}}">{{date updated_at format="ll"}}</time>
+                            Updated: <time class="byline-meta-date" datetime="{{date updated_at format="YYYY-MM-DD"}}">{{date updated_at format="DD MMM YYYY"}}</time>
                         </span>
                     {{/match}}
                 </div>
@@ -124,8 +124,8 @@ into the {body} tag of the default.hbs template --}}
         <div class="inner">
             {{#if @custom.email_signup_text}}<h2 class="footer-cta-title">{{@custom.email_signup_text}}</h2>{{/if}}
             <a class="footer-cta-button" href="#/portal" data-portal>
-                <div class="footer-cta-input">Enter your email</div>
-                <span>Subscribe</span>
+                <div class="footer-cta-input">{{t "Enter your email"}}</div>
+                <span>{{t "Subscribe"}}</span>
             </a>
         </div>
     </section>
