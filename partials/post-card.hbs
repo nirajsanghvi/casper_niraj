@@ -39,22 +39,7 @@ which templates loop over to generate a list of posts. --}}
 
         <header class="post-card-header">
             <div class="post-card-tags">
-                {{!-- {{#primary_tag}}
-                    <span class="post-card-primary-tag">{{name}}</span>
-                {{/primary_tag}} --}}
-                {{#if tags}} 
-                    {{#foreach tags limit="3" }}
-                        <span class="post-card-primary-tag">
-                            <a href="{{url}}">{{name}}</a>
-                        </span>
-                        {{#unless @last}}
-                            <span class="tag-separator"> | </span>
-                        {{/unless}}
-                    {{/foreach}}
-                {{/if}}
-                {{#if featured}}
-                    <span class="post-card-featured">{{> "icons/fire"}} {{t "Featured"}}</span>
-                {{/if}}
+                {{> "custom-post-tags"}}
             </div>
             <a class="post-card-content-link" href="{{url}}">
                 <h2 class="post-card-title">

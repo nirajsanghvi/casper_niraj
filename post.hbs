@@ -13,28 +13,7 @@ into the {body} tag of the default.hbs template --}}
     <header class="article-header gh-canvas">
 
         <div class="article-tag post-card-tags">
-            {{!-- 
-            {{#primary_tag}}
-                <span class="post-card-primary-tag">
-                    <a href="{{url}}">{{name}}</a>
-                </span>
-            {{/primary_tag}}
-            --}}
-
-            {{#if tags}} 
-                {{#foreach tags limit="3" }}
-                    <span class="post-card-primary-tag">
-                        <a href="{{url}}">{{name}}</a>
-                    </span>
-                    {{#unless @last}}
-                        <span class="tag-separator"> | </span>
-                    {{/unless}}
-                {{/foreach}}
-            {{/if}}
-
-            {{#if featured}}
-                <span class="post-card-featured">{{> "icons/fire"}} {{t "Featured"}}</span>
-            {{/if}}
+            {{> "custom-post-tags"}}
         </div>
 
         <h1 class="article-title">{{title}}</h1>
@@ -67,12 +46,7 @@ into the {body} tag of the default.hbs template --}}
                     {{#if reading_time}}
                         <span class="byline-reading-time"><span class="bull">&bull;</span> {{reading_time minute=(t "1 min read") minutes=(t "% min read")}}</span>
                     {{/if}}
-                    {{#match (date published_at format="l") "!=" (date updated_at format="l")}}
-                        <br/>
-                        <span class="byline-updated-date">
-                            Updated: <time class="byline-meta-date" datetime="{{date updated_at format="YYYY-MM-DD"}}">{{date updated_at format="DD MMM YYYY"}}</time>
-                        </span>
-                    {{/match}}
+                    {{> "custom-updated-date"}}
                 </div>
             </div>
 
