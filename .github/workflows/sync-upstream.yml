@@ -1,0 +1,207 @@
+name: Sync upstream TryGhost/Casper
+
+on:
+  schedule:
+    # Run every Monday at 09:00 UTC
+    - cron: "0 9 * * 1"
+  workflow_dispatch:
+    inputs:
+      force_pr:
+        description: "Open a PR even if already up-to-date"
+        required: false
+        default: "false"
+
+jobs:
+  sync:
+    name: Check & sync upstream
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - name: Checkout fork
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Use a PAT if you need the resulting PR to trigger other workflows;
+          # GITHUB_TOKEN is sufficient for opening the PR itself.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Add upstream remote and fetch
+        run: |
+          git remote add upstream https://github.com/TryGhost/Casper.git
+          git fetch upstream main --no-tags
+
+      # ---------------------------------------------------------------
+      # Detect whether upstream has anything new
+      # ---------------------------------------------------------------
+      - name: Check for new upstream commits
+        id: check
+        run: |
+          UPSTREAM_SHA=$(git rev-parse upstream/main)
+          MERGE_BASE=$(git merge-base HEAD upstream/main)
+
+          echo "upstream_sha=$UPSTREAM_SHA" >> "$GITHUB_OUTPUT"
+
+          if [ "$UPSTREAM_SHA" = "$MERGE_BASE" ]; then
+            echo "up_to_date=true" >> "$GITHUB_OUTPUT"
+            echo "ℹ️  Fork is already up-to-date with upstream."
+          else
+            echo "up_to_date=false" >> "$GITHUB_OUTPUT"
+            UPSTREAM_VERSION=$(git show upstream/main:package.json \
+              | python3 -c "import sys,json; print(json.load(sys.stdin)['version'])")
+            echo "upstream_version=$UPSTREAM_VERSION" >> "$GITHUB_OUTPUT"
+            COMMIT_COUNT=$(git rev-list HEAD..upstream/main --count)
+            echo "commit_count=$COMMIT_COUNT" >> "$GITHUB_OUTPUT"
+            echo "🆕  $COMMIT_COUNT new upstream commit(s). Upstream at v$UPSTREAM_VERSION ($UPSTREAM_SHA)."
+          fi
+
+      # ---------------------------------------------------------------
+      # Attempt an automatic merge onto a new branch
+      # ---------------------------------------------------------------
+      - name: Create sync branch and attempt merge
+        id: merge
+        if: steps.check.outputs.up_to_date == 'false' || github.event.inputs.force_pr == 'true'
+        run: |
+          VERSION="${{ steps.check.outputs.upstream_version }}"
+          BRANCH="sync-upstream-v${VERSION}"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+          # Delete the branch locally if it already exists from a previous run
+          git branch -D "$BRANCH" 2>/dev/null || true
+
+          git checkout -b "$BRANCH"
+
+          if git merge upstream/main \
+               --no-edit \
+               -m "Merge upstream TryGhost/Casper v${VERSION} into main"; then
+            echo "merge_status=success" >> "$GITHUB_OUTPUT"
+            echo "✅  Merge succeeded with no conflicts."
+          else
+            echo "merge_status=conflicts" >> "$GITHUB_OUTPUT"
+            echo "⚠️  Merge produced conflicts — will open an Issue instead of a PR."
+            git merge --abort
+          fi
+
+      # ---------------------------------------------------------------
+      # Clean merge → push branch + open a PR
+      # ---------------------------------------------------------------
+      - name: Push sync branch
+        if: steps.merge.outputs.merge_status == 'success'
+        run: git push --force-with-lease origin "${{ steps.merge.outputs.branch }}"
+
+      - name: Open pull request
+        if: steps.merge.outputs.merge_status == 'success'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.check.outputs.upstream_version }}"
+          SHA="${{ steps.check.outputs.upstream_sha }}"
+          COUNT="${{ steps.check.outputs.commit_count }}"
+
+          # Don't open a duplicate PR if one already exists for this branch
+          EXISTING=$(gh pr list --head "${{ steps.merge.outputs.branch }}" --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            echo "PR #$EXISTING already exists for this branch — skipping."
+            exit 0
+          fi
+
+          gh pr create \
+            --base main \
+            --head "${{ steps.merge.outputs.branch }}" \
+            --title "Sync upstream TryGhost/Casper v${VERSION}" \
+            --body "## Automated upstream sync
+
+          Upstream [TryGhost/Casper](https://github.com/TryGhost/Casper) has **${COUNT} new commit(s)** since the last sync.
+
+          | | |
+          |---|---|
+          | **Upstream version** | v${VERSION} |
+          | **Upstream SHA** | \`${SHA}\` |
+          | **Merge** | ✅ Clean — no conflicts |
+
+          This PR was created automatically by the \`sync-upstream\` workflow.
+          Review the diff, confirm all custom modifications in \`partials/custom-*.hbs\` are intact, then merge.
+
+          ### Custom files to verify
+          - \`partials/custom-post-tags.hbs\` — multi-tag display with \`|\` separators
+          - \`partials/custom-updated-date.hbs\` — conditional updated-date display
+          - \`custom-tags.hbs\` — tags listing page (fork-only, never in upstream)
+          "
+
+      # ---------------------------------------------------------------
+      # Conflicting merge → open an Issue so the author knows to act
+      # ---------------------------------------------------------------
+      - name: Open conflict Issue
+        if: steps.merge.outputs.merge_status == 'conflicts'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION="${{ steps.check.outputs.upstream_version }}"
+          SHA="${{ steps.check.outputs.upstream_sha }}"
+          COUNT="${{ steps.check.outputs.commit_count }}"
+
+          # Check if an issue for this version already exists
+          EXISTING=$(gh issue list \
+            --label "upstream-sync" \
+            --state open \
+            --search "Sync upstream TryGhost/Casper v${VERSION}" \
+            --json number --jq '.[0].number')
+          if [ -n "$EXISTING" ]; then
+            echo "Issue #$EXISTING already open for v${VERSION} — skipping."
+            exit 0
+          fi
+
+          # Ensure the label exists
+          gh label create "upstream-sync" \
+            --color "0075ca" \
+            --description "Upstream sync needs attention" 2>/dev/null || true
+
+          gh issue create \
+            --title "⚠️ Manual sync required: upstream TryGhost/Casper v${VERSION}" \
+            --label "upstream-sync" \
+            --body "## Upstream sync needs manual attention
+
+          The automated sync workflow detected **${COUNT} new upstream commit(s)** but the
+          automatic merge produced **conflicts** that need manual resolution.
+
+          | | |
+          |---|---|
+          | **Upstream version** | v${VERSION} |
+          | **Upstream SHA** | \`${SHA}\` |
+          | **Merge** | ⚠️ Conflicts — manual resolution required |
+
+          ### What to do
+
+          1. Create a new branch from \`main\`:
+             \`\`\`bash
+             git checkout main && git pull
+             git checkout -b sync-upstream-v${VERSION}
+             \`\`\`
+          2. Add the upstream remote (if not already present):
+             \`\`\`bash
+             git remote add upstream https://github.com/TryGhost/Casper.git
+             git fetch upstream main
+             \`\`\`
+          3. Merge and resolve conflicts:
+             \`\`\`bash
+             git merge upstream/main
+             # resolve any conflicts — custom code lives in partials/custom-*.hbs
+             \`\`\`
+          4. Push the branch and open a PR targeting \`main\`.
+
+          ### Custom files that are conflict-safe (isolated in their own partials)
+          - \`partials/custom-post-tags.hbs\`
+          - \`partials/custom-updated-date.hbs\`
+          - \`custom-tags.hbs\`
+
+          Any conflicts will be in the upstream-owned template files. See \`CUSTOMIZATIONS.md\`
+          for a complete record of what was changed and why.
+          "

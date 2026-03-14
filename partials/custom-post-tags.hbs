@@ -1,0 +1,18 @@
+{{!--
+    FORK CUSTOMIZATION: Show up to 3 linked tags separated by " | "
+    instead of just the primary tag.
+    Used in: post.hbs, partials/post-card.hbs
+--}}
+{{#if tags}}
+    {{#foreach tags limit="3"}}
+        <span class="post-card-primary-tag">
+            <a href="{{url}}">{{name}}</a>
+        </span>
+        {{#unless @last}}
+            <span class="tag-separator"> | </span>
+        {{/unless}}
+    {{/foreach}}
+{{/if}}
+{{#if featured}}
+    <span class="post-card-featured">{{> "icons/fire"}} {{t "Featured"}}</span>
+{{/if}}

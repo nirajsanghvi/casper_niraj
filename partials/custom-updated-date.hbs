@@ -1,0 +1,11 @@
+{{!--
+    FORK CUSTOMIZATION: Show "Updated: <date>" beneath the publish date
+    when the post was meaningfully updated after its original publish date.
+    Used in: post.hbs
+--}}
+{{#match (date published_at format="l") "!=" (date updated_at format="l")}}
+    <br/>
+    <span class="byline-updated-date">
+        Updated: <time class="byline-meta-date" datetime="{{date updated_at format="YYYY-MM-DD"}}">{{date updated_at format="DD MMM YYYY"}}</time>
+    </span>
+{{/match}}
