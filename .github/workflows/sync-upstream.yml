@@ -112,6 +112,7 @@ jobs:
           fi
 
           gh pr create \
+            --repo nirajsanghvi/casper_niraj \
             --base main \
             --head "${{ steps.merge.outputs.branch }}" \
             --title "Sync upstream TryGhost/Casper v${VERSION}" \
