@@ -2,7 +2,7 @@
     "name": "casper",
     "description": "A clean, minimal default theme for the Ghost publishing platform",
     "demo": "https://demo.ghost.io",
-    "version": "5.10.1",
+    "version": "5.10.3",
     "engines": {
         "ghost": ">=5.0.0"
     },
@@ -46,7 +46,7 @@
     "contributors": "https://github.com/TryGhost/Casper/graphs/contributors",
     "devDependencies": {
         "@tryghost/release-utils": "0.8.1",
-        "@tryghost/theme-translations": "~0.0.14",
+        "@tryghost/theme-translations": "~0.0.16",
         "autoprefixer": "10.4.24",
         "beeper": "2.1.0",
         "cssnano": "7.1.2",
@@ -174,7 +174,8 @@
     },
     "renovate": {
         "extends": [
-            "@tryghost:theme"
+            "@tryghost:theme",
+            "github>TryGhost/Themes:packages/theme-translations/renovate-config"
         ]
     }
 }
