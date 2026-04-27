@@ -7,7 +7,7 @@ const inquirer = require('inquirer');
 // gulp plugins and utils
 const livereload = require('gulp-livereload');
 const postcss = require('gulp-postcss');
-const zip = require('gulp-zip');
+const zip = require('gulp-zip').default;
 const concat = require('gulp-concat');
 const uglify = require('gulp-uglify');
 const beeper = require('beeper');
@@ -136,7 +136,7 @@ exports.release = async () => {
             type: 'input',
             name: 'compatibleWithGhost',
             message: 'Which version of Ghost is it compatible with?',
-            default: '5.0.0'
+            default: '6.0.0'
         }]);
 
         const compatibleWithGhost = result.compatibleWithGhost;
