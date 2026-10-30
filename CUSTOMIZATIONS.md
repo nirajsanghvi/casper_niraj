@@ -97,8 +97,6 @@ otherwise exactly upstream's markup.
 
 ## Upstream sync history
 
-| Synced date | Upstream version | Upstream commit |
-|---|---|---|
-| 2024-11-19 | v5.8.0 | `e29691b4` |
-| 2026-03-14 | v5.10.0 | `10b05b09` |
-| 2026-10-29 | v5.12.5 | `2f93171d` |
+See the merged [sync pull requests](https://github.com/nirajsanghvi/casper_niraj/pulls?q=is%3Apr+is%3Amerged+%22Sync+upstream%22)
+and the [releases](https://github.com/nirajsanghvi/casper_niraj/releases), whose tags
+start with the upstream version each build is based on.
