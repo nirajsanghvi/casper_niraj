@@ -60,19 +60,19 @@ counts, linking each to its tag archive page. Assign a page the template
 
 ---
 
-### 4 — Granular linking in post cards
+### 4 — Linkable tags in post cards
 
 **File:** `partials/post-card.hbs`
 
-The upstream template wraps both the header and excerpt in a single
-`<a class="post-card-content-link">` element.  This fork splits them into
-**two separate anchor tags** — one for the title, one for the excerpt — so that the
-tag links inside the header (added by customization #1) are not nested inside
-another `<a>` element (which is invalid HTML).
+The upstream template wraps the tags, title and excerpt in a single
+`<a class="post-card-content-link">` element, and a tag link can't be nested inside
+another `<a>` (invalid HTML). This fork moves only the `<div class="post-card-tags">`
+block up so it sits just above that link; the link, header, title and excerpt are
+otherwise exactly upstream's markup.
 
-> **Note:** This is a structural change to `partials/post-card.hbs` itself (not
-> isolated in a partial), but because it only affects the element nesting around
-> the title/excerpt, upstream changes to post-card content rarely conflict with it.
+> **Note:** This is the one structural change outside a partial. The diff is a single
+> moved block, so upstream edits to the title, excerpt or meta merge cleanly. A
+> conflict is only likely if upstream changes the tags block itself.
 
 ---
 
@@ -82,3 +82,4 @@ another `<a>` element (which is invalid HTML).
 |---|---|---|
 | 2024-11-19 | v5.8.0 | `e29691b4` |
 | 2026-03-14 | v5.10.0 | `10b05b09` |
+| 2026-10-29 | v5.12.5 | `2f93171d` |
