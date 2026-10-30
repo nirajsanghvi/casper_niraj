@@ -19,10 +19,20 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      actions: write # for the keepalive step
 
     steps:
+      # GitHub disables scheduled workflows after 60 days without repo activity.
+      # Re-enabling a workflow resets that timer, so each run re-enables itself.
+      # No commits or releases are created.
+      - name: Keep this schedule from being auto-disabled
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/sync-upstream.yml/enable"
+
       - name: Checkout fork
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           fetch-depth: 0
           token: ${{ secrets.SYNC_PAT }}
@@ -36,29 +46,41 @@ jobs:
         run: |
           git remote add upstream https://github.com/TryGhost/Casper.git
           git fetch upstream main --no-tags
+          git fetch upstream 'refs/tags/v*:refs/tags/upstream/v*' --no-tags
 
       # ---------------------------------------------------------------
-      # Detect whether upstream has anything new
+      # Only act on new upstream *releases*. Most upstream commits are
+      # automated dependency bumps between releases, so comparing the
+      # package.json version (rather than commits) keeps PRs to roughly
+      # one per Casper release.
       # ---------------------------------------------------------------
-      - name: Check for new upstream commits
+      - name: Check for a new upstream release
         id: check
         run: |
-          UPSTREAM_SHA=$(git rev-parse upstream/main)
-          MERGE_BASE=$(git merge-base HEAD upstream/main)
+          version_of() { git show "$1:package.json" | python3 -c "import sys,json; print(json.load(sys.stdin)['version'])"; }
+          FORK_VERSION=$(version_of HEAD)
+          UPSTREAM_VERSION=$(version_of upstream/main)
+          echo "upstream_version=$UPSTREAM_VERSION" >> "$GITHUB_OUTPUT"
 
-          echo "upstream_sha=$UPSTREAM_SHA" >> "$GITHUB_OUTPUT"
+          # Merge the exact release tag when upstream has one; otherwise upstream/main.
+          if git rev-parse -q --verify "refs/tags/upstream/v${UPSTREAM_VERSION}^{commit}" >/dev/null; then
+            TARGET="upstream/v${UPSTREAM_VERSION}"
+          else
+            TARGET="upstream/main"
+          fi
+          echo "target=$TARGET" >> "$GITHUB_OUTPUT"
+          echo "upstream_sha=$(git rev-parse "${TARGET}^{commit}")" >> "$GITHUB_OUTPUT"
+          echo "commit_count=$(git rev-list "HEAD..${TARGET}" --count)" >> "$GITHUB_OUTPUT"
 
-          if [ "$UPSTREAM_SHA" = "$MERGE_BASE" ]; then
+          if [ "$FORK_VERSION" = "$UPSTREAM_VERSION" ]; then
             echo "up_to_date=true" >> "$GITHUB_OUTPUT"
-            echo "ℹ️  Fork is already up-to-date with upstream."
+            echo "ℹ️  Fork is on v$FORK_VERSION, same as upstream. Nothing to do."
+          elif [ "$(printf '%s\n%s\n' "$FORK_VERSION" "$UPSTREAM_VERSION" | sort -V | tail -1)" = "$FORK_VERSION" ]; then
+            echo "up_to_date=true" >> "$GITHUB_OUTPUT"
+            echo "ℹ️  Fork (v$FORK_VERSION) is ahead of upstream (v$UPSTREAM_VERSION). Nothing to do."
           else
             echo "up_to_date=false" >> "$GITHUB_OUTPUT"
-            UPSTREAM_VERSION=$(git show upstream/main:package.json \
-              | python3 -c "import sys,json; print(json.load(sys.stdin)['version'])")
-            echo "upstream_version=$UPSTREAM_VERSION" >> "$GITHUB_OUTPUT"
-            COMMIT_COUNT=$(git rev-list HEAD..upstream/main --count)
-            echo "commit_count=$COMMIT_COUNT" >> "$GITHUB_OUTPUT"
-            echo "🆕  $COMMIT_COUNT new upstream commit(s). Upstream at v$UPSTREAM_VERSION ($UPSTREAM_SHA)."
+            echo "🆕  New upstream release: v$FORK_VERSION → v$UPSTREAM_VERSION (merging $TARGET)."
           fi
 
       # ---------------------------------------------------------------
@@ -77,7 +99,7 @@ jobs:
 
           git checkout -b "$BRANCH"
 
-          if git merge upstream/main \
+          if git merge "${{ steps.check.outputs.target }}" \
                --no-edit \
                -m "Merge upstream TryGhost/Casper v${VERSION} into main"; then
             echo "merge_status=success" >> "$GITHUB_OUTPUT"
@@ -118,7 +140,7 @@ jobs:
             --title "Sync upstream TryGhost/Casper v${VERSION}" \
             --body "## Automated upstream sync
 
-          Upstream [TryGhost/Casper](https://github.com/TryGhost/Casper) has **${COUNT} new commit(s)** since the last sync.
+          Upstream [TryGhost/Casper](https://github.com/TryGhost/Casper) released **v${VERSION}** ([release notes](https://github.com/TryGhost/Casper/releases/tag/v${VERSION})). This merges ${COUNT} upstream commit(s), most of them usually dependency updates.
 
           | | |
           |---|---|
@@ -168,8 +190,8 @@ jobs:
             --label "upstream-sync" \
             --body "## Upstream sync needs manual attention
 
-          The automated sync workflow detected **${COUNT} new upstream commit(s)** but the
-          automatic merge produced **conflicts** that need manual resolution.
+          Upstream released **v${VERSION}** but the automatic merge produced
+          **conflicts** that need manual resolution.
 
           | | |
           |---|---|
@@ -187,11 +209,11 @@ jobs:
           2. Add the upstream remote (if not already present):
              \`\`\`bash
              git remote add upstream https://github.com/TryGhost/Casper.git
-             git fetch upstream main
+             git fetch upstream main --tags
              \`\`\`
-          3. Merge and resolve conflicts:
+          3. Merge the release and resolve conflicts:
              \`\`\`bash
-             git merge upstream/main
+             git merge v${VERSION}
              # resolve any conflicts — custom code lives in partials/custom-*.hbs
              \`\`\`
           4. Push the branch and open a PR targeting \`main\`.

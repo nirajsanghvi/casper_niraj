@@ -7,10 +7,29 @@ personal customizations on top of the upstream theme.
 
 ## How this fork stays up-to-date
 
-A GitHub Actions workflow (`.github/workflows/sync-upstream.yml`) runs every Monday
-and automatically opens a pull request when upstream has new commits.  
-If the merge is clean the PR is ready to review and merge immediately.  
-If there are genuine conflicts the workflow files a GitHub Issue instead.
+A GitHub Actions workflow (`.github/workflows/sync-upstream.yml`) checks upstream every
+Monday, but only acts when upstream publishes a **new release version** (the
+`package.json` version changes). Upstream's frequent dependency-only commits between
+releases are ignored. When there is a new release:
+
+- If it merges cleanly, the workflow opens a PR that merges that release's tag.
+- If there are conflicts, it files a GitHub Issue instead.
+
+Each run also re-enables the workflow, so GitHub's 60-day inactivity rule never
+switches the schedule off.
+
+## Getting the theme zip
+
+`.github/workflows/release.yml` builds the theme on every merge to `main` (except
+changes to only Markdown or `.github/` files) and attaches it to a GitHub release
+tagged `v<upstream version>-niraj.<n>`, e.g. `v5.12.5-niraj.1`. The newest build is
+always at:
+
+https://github.com/nirajsanghvi/casper_niraj/releases/latest/download/casper_niraj.zip
+
+The zip is always named `casper_niraj.zip`, so uploading it in Ghost Admin replaces the
+installed theme rather than adding another one. To roll back, upload the zip from an
+older release.
 
 ### Why conflicts should be rare
 

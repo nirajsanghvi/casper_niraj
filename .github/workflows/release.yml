@@ -1,0 +1,70 @@
+name: Release theme zip
+
+# Builds the theme and attaches it to a GitHub release on every merge to main,
+# so the newest build is always at:
+#   https://github.com/nirajsanghvi/casper_niraj/releases/latest/download/casper_niraj.zip
+#
+# The zip always has the same name, so uploading it in Ghost Admin replaces the
+# installed theme instead of adding a new one. To roll back, download the zip from
+# an older release and upload it.
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**.md"
+      - ".github/**"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    name: Build and release
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0 # needs existing tags to number the release
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      # Builds assets, zips the theme to dist/casper.zip, and runs gscan
+      - run: pnpm test:ci
+
+      - name: Rename zip
+        run: mv dist/casper.zip dist/casper_niraj.zip
+
+      # Tag = upstream version + counter, e.g. v5.12.5-niraj.1, v5.12.5-niraj.2
+      - name: Pick release tag
+        id: tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          LAST=$(git tag -l "v${VERSION}-niraj.*" | sed "s/^v${VERSION}-niraj\.//" | sort -n | tail -1)
+          TAG="v${VERSION}-niraj.$(( ${LAST:-0} + 1 ))"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          echo "Releasing $TAG"
+
+      - name: Create release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${{ steps.tag.outputs.tag }}" dist/casper_niraj.zip \
+            --target "$GITHUB_SHA" \
+            --title "${{ steps.tag.outputs.tag }}" \
+            --generate-notes \
+            --latest
