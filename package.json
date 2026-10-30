@@ -151,7 +151,7 @@
                     "Dark",
                     "Auto"
                 ],
-                "default": "Light"
+                "default": "Dark"
             },
             "post_image_style": {
                 "type": "select",

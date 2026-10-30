@@ -94,6 +94,20 @@ otherwise exactly upstream's markup.
 
 ---
 
+### 5 — Dark color scheme by default
+
+**File:** `package.json` (`config.custom.color_scheme.default`)
+
+Ghost keeps theme settings per installed theme, and each release zip installs as a
+separate theme, so every upload would start from the theme's defaults. Changing the
+default from `"Light"` to `"Dark"` means each new upload is already in dark mode.
+
+> **Note:** Upstream's routine `package.json` edits (version, dependencies) are in
+> other parts of the file and merge cleanly around this line; it was last changed
+> upstream in 2022.
+
+---
+
 ## Upstream sync history
 
 See the merged [sync pull requests](https://github.com/nirajsanghvi/casper_niraj/pulls?q=is%3Apr+is%3Amerged+%22Sync+upstream%22)
