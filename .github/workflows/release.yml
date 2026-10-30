@@ -1,10 +1,14 @@
 name: Release theme zip
 
-# Builds the theme and attaches it to a GitHub release on every merge to main.
+# Builds the theme and attaches it to a GitHub release on every merge to main,
+# so the newest build is always at:
+#   https://github.com/nirajsanghvi/casper_niraj/releases/latest/download/casper_niraj.zip
 #
-# The zip is named after the release tag (e.g. casper-v5.12.5-niraj.1.zip), so each
-# upload shows up in Ghost Admin as its own theme, e.g. "casper (casper-v5.12.5-niraj.1)".
-# Older versions stay installed until deleted, which makes rolling back one click.
+# The zip always has the same name on purpose. Ghost keeps theme settings per
+# installed theme (keyed by its folder name, which comes from the zip filename), so
+# re-uploading the same name replaces the theme in place and keeps any settings
+# changed in Ghost Admin. A new name would install a separate theme with defaults.
+# To roll back, upload the zip from an older release.
 
 on:
   push:
@@ -41,7 +45,7 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
-      # Builds assets, zips the theme to dist/casper.zip, and runs gscan
+      # Builds assets, zips the theme to dist/<package.json name>.zip, and runs gscan
       - run: pnpm test:ci
 
       # Tag = upstream version + counter, e.g. v5.12.5-niraj.1, v5.12.5-niraj.2
@@ -54,11 +58,11 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Releasing $TAG"
 
-      - name: Name zip after the release
+      - name: Give the zip its fixed name
         id: zip
         run: |
-          ZIP="dist/casper-${{ steps.tag.outputs.tag }}.zip"
-          mv dist/casper.zip "$ZIP"
+          ZIP="dist/casper_niraj.zip"
+          mv "dist/$(node -p "require('./package.json').name").zip" "$ZIP"
           echo "path=$ZIP" >> "$GITHUB_OUTPUT"
 
       - name: Create release

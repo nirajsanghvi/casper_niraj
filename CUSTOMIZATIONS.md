@@ -22,13 +22,16 @@ switches the schedule off.
 
 `.github/workflows/release.yml` builds the theme on every merge to `main` (except
 changes to only Markdown or `.github/` files) and attaches it to a GitHub release
-tagged `v<upstream version>-niraj.<n>`, e.g. `v5.12.5-niraj.1`. Download the newest one
-from the [latest release](https://github.com/nirajsanghvi/casper_niraj/releases/latest).
+tagged `v<upstream version>-niraj.<n>`, e.g. `v5.12.5-niraj.2`. The newest build is
+always at:
 
-The zip is named after the release (e.g. `casper-v5.12.5-niraj.1.zip`), so each upload
-appears in Ghost Admin as its own theme, e.g. `casper (casper-v5.12.5-niraj.1)`. Older
-versions stay installed until deleted, so rolling back is just activating the previous
-one.
+https://github.com/nirajsanghvi/casper_niraj/releases/latest/download/casper_niraj.zip
+
+The zip is always named `casper_niraj.zip` on purpose. Ghost keeps theme settings per
+installed theme, keyed by the folder name that comes from the zip filename, so uploading
+the same filename replaces the theme in place and keeps settings changed in Ghost Admin.
+A different filename would install a separate theme starting from defaults. To roll
+back, upload the zip from an older release.
 
 ### Why conflicts should be rare
 
@@ -98,13 +101,26 @@ otherwise exactly upstream's markup.
 
 **File:** `package.json` (`config.custom.color_scheme.default`)
 
-Ghost keeps theme settings per installed theme, and each release zip installs as a
-separate theme, so every upload would start from the theme's defaults. Changing the
-default from `"Light"` to `"Dark"` means each new upload is already in dark mode.
+Changes the default from `"Light"` to `"Dark"`, so a fresh install of the theme starts
+in dark mode without changing it in Ghost Admin.
 
 > **Note:** Upstream's routine `package.json` edits (version, dependencies) are in
 > other parts of the file and merge cleanly around this line; it was last changed
 > upstream in 2022.
+
+---
+
+### 6 — Theme name `casper-niraj`
+
+**File:** `package.json` (`name`)
+
+Ghost Admin lists the theme as `casper-niraj (casper_niraj)` instead of
+`casper (…)`, which distinguishes it from Ghost's built-in Casper. The build also names
+its zip after this value (`dist/casper-niraj.zip`), which the release workflow renames
+to `casper_niraj.zip`.
+
+> **Note:** Upstream last changed this line in 2014, and the version line below it is
+> separated by unchanged lines, so syncs merge cleanly around it.
 
 ---
 
