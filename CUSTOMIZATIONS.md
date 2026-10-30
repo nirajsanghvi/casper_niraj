@@ -22,14 +22,13 @@ switches the schedule off.
 
 `.github/workflows/release.yml` builds the theme on every merge to `main` (except
 changes to only Markdown or `.github/` files) and attaches it to a GitHub release
-tagged `v<upstream version>-niraj.<n>`, e.g. `v5.12.5-niraj.1`. The newest build is
-always at:
+tagged `v<upstream version>-niraj.<n>`, e.g. `v5.12.5-niraj.1`. Download the newest one
+from the [latest release](https://github.com/nirajsanghvi/casper_niraj/releases/latest).
 
-https://github.com/nirajsanghvi/casper_niraj/releases/latest/download/casper_niraj.zip
-
-The zip is always named `casper_niraj.zip`, so uploading it in Ghost Admin replaces the
-installed theme rather than adding another one. To roll back, upload the zip from an
-older release.
+The zip is named after the release (e.g. `casper-v5.12.5-niraj.1.zip`), so each upload
+appears in Ghost Admin as its own theme, e.g. `casper (casper-v5.12.5-niraj.1)`. Older
+versions stay installed until deleted, so rolling back is just activating the previous
+one.
 
 ### Why conflicts should be rare
 

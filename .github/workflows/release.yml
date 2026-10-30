@@ -1,12 +1,10 @@
 name: Release theme zip
 
-# Builds the theme and attaches it to a GitHub release on every merge to main,
-# so the newest build is always at:
-#   https://github.com/nirajsanghvi/casper_niraj/releases/latest/download/casper_niraj.zip
+# Builds the theme and attaches it to a GitHub release on every merge to main.
 #
-# The zip always has the same name, so uploading it in Ghost Admin replaces the
-# installed theme instead of adding a new one. To roll back, download the zip from
-# an older release and upload it.
+# The zip is named after the release tag (e.g. casper-v5.12.5-niraj.1.zip), so each
+# upload shows up in Ghost Admin as its own theme, e.g. "casper (casper-v5.12.5-niraj.1)".
+# Older versions stay installed until deleted, which makes rolling back one click.
 
 on:
   push:
@@ -46,9 +44,6 @@ jobs:
       # Builds assets, zips the theme to dist/casper.zip, and runs gscan
       - run: pnpm test:ci
 
-      - name: Rename zip
-        run: mv dist/casper.zip dist/casper_niraj.zip
-
       # Tag = upstream version + counter, e.g. v5.12.5-niraj.1, v5.12.5-niraj.2
       - name: Pick release tag
         id: tag
@@ -59,11 +54,18 @@ jobs:
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "Releasing $TAG"
 
+      - name: Name zip after the release
+        id: zip
+        run: |
+          ZIP="dist/casper-${{ steps.tag.outputs.tag }}.zip"
+          mv dist/casper.zip "$ZIP"
+          echo "path=$ZIP" >> "$GITHUB_OUTPUT"
+
       - name: Create release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          gh release create "${{ steps.tag.outputs.tag }}" dist/casper_niraj.zip \
+          gh release create "${{ steps.tag.outputs.tag }}" "${{ steps.zip.outputs.path }}" \
             --target "$GITHUB_SHA" \
             --title "${{ steps.tag.outputs.tag }}" \
             --generate-notes \
