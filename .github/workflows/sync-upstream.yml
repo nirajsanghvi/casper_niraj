@@ -62,8 +62,13 @@ jobs:
           UPSTREAM_VERSION=$(version_of upstream/main)
           echo "upstream_version=$UPSTREAM_VERSION" >> "$GITHUB_OUTPUT"
 
-          # Merge the exact release tag when upstream has one; otherwise upstream/main.
-          if git rev-parse -q --verify "refs/tags/upstream/v${UPSTREAM_VERSION}^{commit}" >/dev/null; then
+          # Merge the exact release tag when upstream has one AND it's on upstream's
+          # main branch; otherwise merge upstream/main. Some upstream tags are cut on
+          # commits outside main (e.g. v5.10.0, v5.10.1, v5.12.4), and merging one of
+          # those makes the next release conflict on the package.json version line.
+          TAG_REF="refs/tags/upstream/v${UPSTREAM_VERSION}"
+          if git rev-parse -q --verify "${TAG_REF}^{commit}" >/dev/null \
+             && git merge-base --is-ancestor "$TAG_REF" upstream/main; then
             TARGET="upstream/v${UPSTREAM_VERSION}"
           else
             TARGET="upstream/main"
